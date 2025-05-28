@@ -36,7 +36,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       console.log('Loading YouTube Player for videoId:', videoId);
       if (!containerRef.current) return;
 
-      playerRef.current = new window.YT.Player(containerRef.current, {
+      playerRef.current = new (window as any).window.YT.Player(containerRef.current, {
         height: '100%',
         width: '100%',
         videoId,

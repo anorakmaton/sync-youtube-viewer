@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { YouTubePlayer } from '../components/YouTubePlayer';
 import { extractVideoId } from '../utils';
 
 export const WatchPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [isSyncEnabled, setIsSyncEnabled] = useState(true);
+  const [isSyncEnabled, setIsSyncEnabled] = useState(false);
   const playersRef = useRef<YT.Player[]>([]);
   const activePlayerIndexRef = useRef<number | null>(null);
   const lastSeekTimeRef = useRef<number>(0);
@@ -49,7 +49,7 @@ export const WatchPage: React.FC = () => {
     });
   }, []);
 
-  const handleSeek = useCallback((event: YT.OnStateChangeEvent, index: number) => {
+  const handleSeek = useCallback((index: number) => {
     if (!isSyncEnabledRef.current) return;
     const currentTime = Date.now();
     if (currentTime - lastSeekTimeRef.current < 300) return;
@@ -83,7 +83,30 @@ export const WatchPage: React.FC = () => {
   );
 
   return (
-    <div style={{ padding: '0',  maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div style={{ padding: '0', maxWidth: '100%', boxSizing: 'border-box' }}>
+      <header style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '10px 20px',
+        backgroundColor: '##1e1e1e',
+        borderBottom: '1px solid rgb(34 70 139)'
+      }}>
+        <h2 style={{ margin: 0 }}>YouTube Sync Viewer</h2>
+        <Link 
+          to="/"
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            textDecoration: 'none',
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}
+        >
+          Back to Input
+        </Link>
+      </header>
       <div style={{ 
         display: 'grid',
         gridTemplateColumns: `repeat(${videoIds.length}, 1fr)`,
@@ -101,7 +124,7 @@ export const WatchPage: React.FC = () => {
               handleStateChange(event, index);
               // シーク操作の検出（再生状態が変わらない場合）
               if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED) {
-                handleSeek(event, index);
+                handleSeek(index);
               }
             }}
             onError={handleError}
