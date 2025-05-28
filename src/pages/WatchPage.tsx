@@ -14,7 +14,8 @@ export const WatchPage: React.FC = () => {
   const videoIds = urls.map(url => extractVideoId(url)).filter((id): id is string => id !== null);
   const isSyncEnabledRef = useRef(isSyncEnabled);
   const prevSeekTimeRef = useRef<number[]>([]);
-  
+  const syncBaseTimesRef = useRef<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // 各プレイヤーの同期基準時間（0で初期化）
+
   useEffect(() => {
     isSyncEnabledRef.current = isSyncEnabled;
   }, [isSyncEnabled]);
@@ -62,12 +63,18 @@ export const WatchPage: React.FC = () => {
     const activePlayer = playersRef.current[index];
     if (!activePlayer) return;
 
-    const currentTimeInSeconds = activePlayer.getCurrentTime();
-    console.log(`[handleSeek] Player ${index} seeking to:`, currentTimeInSeconds);
-    // シーク操作を他のプレイヤーに反映
+    const baseTimes = syncBaseTimesRef.current;
+    const activeBase = baseTimes[index] ?? activePlayer.getCurrentTime();
+    const activeCurrent = activePlayer.getCurrentTime();
+    const offset = activeCurrent - activeBase;
+
+    // 他のプレイヤーも基準値＋オフセットにシーク
     playersRef.current.forEach((player, i) => {
       if (i === index || !player) return;
-      player.seekTo(currentTimeInSeconds, true);
+      const otherBase = baseTimes[i] ?? player.getCurrentTime();
+      const target = otherBase + offset;
+      console.log(`[handleSeek] Player ${i} seekto ${target} (base: ${otherBase}, offset: ${offset})`);
+      player.seekTo(target, true);
     });
   }, []);
 
@@ -85,7 +92,12 @@ export const WatchPage: React.FC = () => {
   const handleSyncToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newSyncEnabled = e.target.checked;
     setIsSyncEnabled(newSyncEnabled);
-    
+
+    if (newSyncEnabled) {
+      // 同期モードON時に各プレイヤーの現在位置を基準値として保存
+      syncBaseTimesRef.current = playersRef.current.map(player => player?.getCurrentTime() ?? 0);
+      console.log('[handleSyncToggle] syncBaseTimesRef', syncBaseTimesRef.current);
+    }
     // if (newSyncEnabled && activePlayerIndexRef.current !== null) {
     //   const activePlayer = playersRef.current[activePlayerIndexRef.current];
     //   if (activePlayer) {
