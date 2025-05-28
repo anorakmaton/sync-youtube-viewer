@@ -13,7 +13,6 @@ export const WatchPage: React.FC = () => {
   const urls = searchParams.getAll('url');
   const videoIds = urls.map(url => extractVideoId(url)).filter((id): id is string => id !== null);
   const isSyncEnabledRef = useRef(isSyncEnabled);
-  const prevSeekTimeRef = useRef<number[]>([]);
   const syncBaseTimesRef = useRef<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]); // 各プレイヤーの同期基準時間（0で初期化）
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export const WatchPage: React.FC = () => {
   const handleStateChange = useCallback((event: YT.OnStateChangeEvent, index: number) => {
     // Update active player whenever there's interaction
     activePlayerIndexRef.current = index;
-    console.log(`[handleStateChange] activePlayerIndex: ${activePlayerIndexRef.current}, index: ${index}`);
     if (!isSyncEnabledRef.current) return;
 
     const state = event.data;
@@ -52,11 +50,8 @@ export const WatchPage: React.FC = () => {
   }, []);
 
   const handleSeek = useCallback((event: YT.OnStateChangeEvent, index: number) => {
-    console.log(`[handleSeek] isSyncEnabled${isSyncEnabledRef.current}, activePlayerIndex: ${activePlayerIndexRef.current}, index: ${index}`);
     if (!isSyncEnabledRef.current) return;
-
     const currentTime = Date.now();
-    console.log(`[handleSeek] Current time - Last seek time: ${currentTime - lastSeekTimeRef.current}ms`);
     if (currentTime - lastSeekTimeRef.current < 300) return;
     lastSeekTimeRef.current = currentTime;
 
@@ -73,43 +68,13 @@ export const WatchPage: React.FC = () => {
       if (i === index || !player) return;
       const otherBase = baseTimes[i] ?? player.getCurrentTime();
       const target = otherBase + offset;
-      console.log(`[handleSeek] Player ${i} seekto ${target} (base: ${otherBase}, offset: ${offset})`);
       player.seekTo(target, true);
     });
   }, []);
 
-  const handleStateChangeForIndex = useCallback((index: number) => (event: YT.OnStateChangeEvent) => {
-    handleStateChange(event, index);
-    if (event.data === YT.PlayerState.PLAYING || event.data === YT.PlayerState.PAUSED) {
-      handleSeek(event, index);
-    }
-  }, [handleStateChange, handleSeek]);
-
   const handleError = useCallback((error: YT.OnErrorEvent) => {
     console.error('YouTube Player Error:', error);
-  }, []);
-
-  const handleSyncToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newSyncEnabled = e.target.checked;
-    setIsSyncEnabled(newSyncEnabled);
-
-    if (newSyncEnabled) {
-      // 同期モードON時に各プレイヤーの現在位置を基準値として保存
-      syncBaseTimesRef.current = playersRef.current.map(player => player?.getCurrentTime() ?? 0);
-      console.log('[handleSyncToggle] syncBaseTimesRef', syncBaseTimesRef.current);
-    }
-    // if (newSyncEnabled && activePlayerIndexRef.current !== null) {
-    //   const activePlayer = playersRef.current[activePlayerIndexRef.current];
-    //   if (activePlayer) {
-    //     const currentTime = activePlayer.getCurrentTime();
-    //     playersRef.current.forEach((player, i) => {
-    //       if (i !== activePlayerIndexRef.current && player) {
-    //         player.seekTo(currentTime, true);
-    //       }
-    //     });
-    //   }
-    // }
-    // console.log('同期モード:', newSyncEnabled);
+    // エラー処理をここに追加できます
   }, []);
 
   const playerReadyCallbacks = useMemo(
@@ -117,25 +82,15 @@ export const WatchPage: React.FC = () => {
     [videoIds, handlePlayerReady]
   );
 
-  const stateChangeCallbacks = useMemo(
-    () => videoIds.map((_, index) => (event: YT.OnStateChangeEvent) => handleStateChangeForIndex(index)(event)),
-    [videoIds, handleStateChangeForIndex]
-  );
-
   return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-          <input
-            type="checkbox"
-            checked={isSyncEnabled}
-            onChange={handleSyncToggle}
-          />
-          同期モード
-        </label>
-      </div>
-
-      <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: `repeat(${videoIds.length}, 1fr)` }}>
+    <div style={{ padding: '0',  maxWidth: '100%', boxSizing: 'border-box' }}>
+      <div style={{ 
+        display: 'grid',
+        gridTemplateColumns: `repeat(${videoIds.length}, 1fr)`,
+        width: '100vw',
+        gap: '0',
+        alignItems: 'stretch', // 高さを揃える
+      }}>
         {videoIds.map((videoId, index) => (
           <YouTubePlayer
             key={videoId}
@@ -152,6 +107,32 @@ export const WatchPage: React.FC = () => {
             onError={handleError}
           />
         ))}
+      </div>
+      <div style={{ 
+        marginTop: '20px', 
+        textAlign: 'center',
+        width: '100%'
+      }}>
+        <button
+          onClick={() => {
+            setIsSyncEnabled(!isSyncEnabled);
+            if (!isSyncEnabled) {
+              // 同期モードOFF時に各プレイヤーの現在位置を基準値として保存
+              syncBaseTimesRef.current = playersRef.current.map(player => player?.getCurrentTime() ?? 0);
+            }
+          }}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: isSyncEnabled ? '#4CAF50' : '#f44336',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '16px'
+          }}
+        >
+          {isSyncEnabled ? '同期中' : '同期OFF'}
+        </button>
       </div>
     </div>
   );

@@ -37,6 +37,8 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
       if (!containerRef.current) return;
 
       playerRef.current = new window.YT.Player(containerRef.current, {
+        height: '100%',
+        width: '100%',
         videoId,
         playerVars: {
           autoplay: 0,
@@ -67,12 +69,23 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
 
   return (
     <div
-      ref={containerRef}
       style={{
         width: '100%',
         aspectRatio: '16/9',
+        position: 'relative',
         backgroundColor: '#000',
       }}
-    />
+    >
+      <div
+        ref={containerRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </div>    
   );
 };
