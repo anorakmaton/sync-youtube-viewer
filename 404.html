@@ -1,15 +1,21 @@
-<!-- public/404.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>404</title>
+    <title>Redirecting...</title>
+    <script>
+      (function () {
+        const pathname = window.location.pathname;
+        const search = window.location.search;
+        const hash = window.location.hash;
+        const base = "/sync-youtube-viewer";
+
+        const newUrl = base + "/index.html?redirect=" + encodeURIComponent(pathname + search + hash);
+        window.location.replace(newUrl);
+      })();
+    </script>
   </head>
   <body>
-    <script>
-      // すべてのURLをReactアプリのトップに戻す
-      window.location.href = "/sync-youtube-viewer/" + "?" + window.location.pathname.slice("/sync-youtube-viewer/".length) + window.location.search;
-    </script>
+    Redirecting...
   </body>
 </html>
