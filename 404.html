@@ -1,14 +1,15 @@
+<!-- public/404.html -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <title>Redirecting...</title>
-    <script>
-      sessionStorage.redirect = location.href;
-    </script>
-    <meta http-equiv="refresh" content="0;URL='/'">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404</title>
   </head>
   <body>
-    Redirecting to home page...
+    <script>
+      // すべてのURLをReactアプリのトップに戻す
+      window.location.href = "/sync-youtube-viewer/" + "?" + window.location.pathname.slice("/sync-youtube-viewer/".length) + window.location.search;
+    </script>
   </body>
 </html>
