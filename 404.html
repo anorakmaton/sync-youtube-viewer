@@ -9,8 +9,9 @@
         const search = window.location.search;
         const hash = window.location.hash;
         const base = "/sync-youtube-viewer";
-
+        
         const newUrl = base + "/index.html?redirect=" + encodeURIComponent(pathname + search + hash);
+        console.log("Redirecting to:", newUrl);
         window.location.replace(newUrl);
       })();
     </script>
